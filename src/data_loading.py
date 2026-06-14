@@ -37,6 +37,7 @@ def load_roads():
 
 if __name__ == "__main__":
     try:
+        print("Bước 4/4:Load dữ liệu vào db :")
         clean_old_data()
         load_vehicles()
         load_roads()
