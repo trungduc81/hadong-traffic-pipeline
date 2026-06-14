@@ -1,239 +1,71 @@
-# 🚦 Xây dựng Hạ tầng Dữ liệu Không gian Giám sát Giao thông Quận Hà Đông
+# 🚦 Traffic-Flow-Analyzer (Hà Đông Traffic Monitoring)
 
-## 📋 Thông tin Dự án
+Hệ thống Data Pipeline tự động hóa dùng để thu thập, giả lập và phân tích dữ liệu giao thông thực tế tại khu vực quận Hà Đông, Hà Nội.
 
-| Thông tin | Chi tiết |
-|-----------|---------|
-| **Tên dự án** | Xây dựng Hạ tầng Dữ liệu Không gian Giám sát Giao thông Quận Hà Đông |
-| **Sinh viên thực hiện** | Trần Đức Trung |
-| **Mã sinh viên** | B23DCCN864 |
-| **Công nghệ chính** | Python 3.10, Streamlit, PostGIS, PostgreSQL, GeoPandas |
+## 1. Tổng quan dự án và tác dụng
+Dự án được thiết kế để giải quyết bài toán quản lý dữ liệu không gian hạ tầng giao thông. Hệ thống cho phép:
+* **Tự động hóa luồng dữ liệu (ETL)**: Thu thập mạng lưới đường từ OpenStreetMap, làm sạch và chuẩn hóa dữ liệu bản đồ.
+* **Mô phỏng thực tế**: Giả lập luồng di chuyển của các phương tiện với dữ liệu GPS giả lập 
+* **Phân tích thông minh**: Áp dụng thuật toán tính toán mật độ giao thông và trạng thái ùn tắc trên các phân đoạn đường.
+* **Trực quan hóa**: Cung cấp Dashboard theo dõi trực tiếp các điểm nóng (Hotspots) và vận tốc phương tiện trên bản đồ.
 
----
+## 2. Công nghệ sử dụng
+Dự án sử dụng các công nghệ:
+* **Ngôn ngữ**: Python 3.10 và các thư viện hỗ trợ 
+* **Data Engineering**: ETL Pipeline , Pandas, GeoPandas, SQLAlchemy
+* **Deploy**: Docker & Docker Compose 
+* **Spatial Data**: PostGIS & PostgresSQL 
 
-## 🏗️ Kiến trúc Dự án
+## 3. Cấu trúc dự án
+Hệ thống vận hành theo một quy trình khép kín, được điều phối bởi run.py. Luồng đi của dữ liệu như sau:
 
+Extract (Trích xuất): src/osm_data.py -> Tải dữ liệu thô từ OpenStreetMap về máy.
+
+Transform (Biến đổi - Bước 1): src/clean_data.py -> Loại bỏ các thông tin dư thừa, xử lý dữ liệu rác từ file thô.
+
+Transform (Biến đổi - Bước 2): src/normalize.py -> Định dạng lại cấu trúc cột, kiểu dữ liệu, hệ tọa độ (EPSG:4326) để khớp với Schema trong Database.
+
+Load (Nạp): src/data_loading.py -> Đẩy dữ liệu đã làm sạch vào PostgreSQL/PostGIS.
+
+Simulation & Analytics:
+
+src/gps_simulator.py: Tạo luồng dữ liệu giả lập (GPS) và nạp vào DB.
+
+src/app.py: Đọc dữ liệu từ DB (kết hợp qua View traffic_analytics) và hiển thị lên Dashboard.
 ```
-Hạ tầng Dữ liệu Giao thông
+hadong-traffic-pipeline/
+├── src/                   
+│   ├── osm_data.py         # (E) Extract: Tải dữ liệu OSM
+│   ├── clean_data.py       # (T) Transform: Làm sạch dữ liệu
+│   ├── normalize.py        # (T) Transform: Chuẩn hóa cấu trúc
+│   ├── data_loading.py     # (L) Load: Nạp dữ liệu vào DB
+│   ├── gps_simulator.py    # Giả lập luồng di chuyển của xe
+│   └── app.py              # Streamlit Dashboard hiển thị kết quả
 │
-├── 📥 ETL Pipeline (Data Ingestion)
-│   ├── 1️⃣ osm_data.py → Trích xuất dữ liệu từ OpenStreetMap
-│   ├── 2️⃣ clean_data.py → Làm sạch dữ liệu thô
-│   ├── 3️⃣ normalize.py → Chuẩn hóa cấu trúc & hệ tọa độ
-│   └── 4️⃣ data_loading.py → Nạp vào PostgreSQL + PostGIS
-│
-├── 📊 Streaming Data (Real-time)
-│   └── gps_simulator.py → Giả lập GPS tracking liên tục
-│
-└── 🎨 Dashboard (Visualization)
-    └── app.py → Giao diện Streamlit hiển thị Heatmap & Speed Map
+├── data/                   # Chứa dữ liệu thô (.geojson, .csv)
+├── init.sql                # Script khởi tạo database
+├── run.py                  # Điều phối toàn bộ Pipeline
+├── Dockerfile               
+├── docker-compose.yml      
+└── README.md               
 ```
+## 4. Cách cài đặt và chạy
 
----
+Dự án sử dụng Docker để đồng bộ hóa môi trường phát triển. Hãy đảm bảo bạn đã cài đặt [Docker](https://www.docker.com/products/docker-desktop/) và Docker Compose trước khi bắt đầu.
 
-## 📦 Tech Stack
-
-- **Backend**: Python 3.10
-- **Web Framework**: Streamlit
-- **Database**: PostgreSQL 15 + PostGIS 3.3
-- **Data Processing**: Pandas, GeoPandas, Shapely, OSMnx, NetworkX
-- **Containerization**: Docker & Docker Compose
-
----
-
-## 🚀 Hướng dẫn Cài đặt (One-click Run)
-
-### Yêu cầu tiên quyết
-- Docker & Docker Compose đã cài đặt
-- Port 8501 (Streamlit) và 5433 (PostgreSQL) không bị chiếm dụng
-
-### Bước 1: Clone hoặc tải dự án
-```bash
-cd d:\Ky2_Nam3\TTCS
+### Bước 1: Clone dự án 
 ```
-
-### Bước 2: Khởi chạy toàn bộ hệ thống
-```bash
-docker compose up --build -d
+git clone https://github.com/trungduc81/hadong-traffic-pipeline.git
 ```
-
-**Giải thích lệnh:**
-- `up` → Khởi chạy các service
-- `--build` → Rebuild image từ Dockerfile
-- `-d` → Chạy ở chế độ background (daemon)
-
-### Bước 3: Truy cập Dashboard
-Mở trình duyệt và vào:
+### Bước 2: Khởi chạy hệ thống
 ```
-http://localhost:8501
+docker compose up -d --build
 ```
-
-### Bước 4: Theo dõi tiến độ
-```bash
-# Xem logs của tất cả container
-docker compose logs -f
-
-# Xem logs của service web
-docker compose logs -f web
-
-# Xem logs của service db
-docker compose logs -f db
+### Bước 3: Kiểm tra trạng thái tiến trình 
+``` 
+docker logs -f hadong_web
 ```
-
----
-
-## 🛑 Dừng dự án
-
-```bash
-docker compose down
+### Bước 4 : Truy cập dashboard
 ```
-
-Để xóa cả volume (dữ liệu):
-```bash
-docker compose down -v
+Mở trình duyệt web và truy cập http://localhost:8501
 ```
-
----
-
-## 📁 Cấu trúc Thư mục
-
-```
-TTCS/
-├── src/
-│   ├── osm_data.py           # Bước 1: Trích xuất OSM
-│   ├── clean_data.py         # Bước 2: Làm sạch
-│   ├── normalize.py          # Bước 3: Chuẩn hóa
-│   ├── data_loading.py       # Bước 4: Nạp DB
-│   ├── gps_simulator.py      # Streaming GPS
-│   └── app.py                # Dashboard Streamlit
-│
-├── data/                      # Lưu trữ file geojson/csv
-├── postgres_data/             # Database files (Docker)
-├── cache/                     # Cache files
-│
-├── Dockerfile                 # Đóng gói Python env
-├── docker-compose.yml         # Orchestrate services
-├── entrypoint.sh              # Script chạy ETL
-├── requirements.txt           # Python dependencies
-├── .gitignore                 # Git ignore rules
-└── README.md                  # Tài liệu này
-```
-
----
-
-## 🔧 Biến Môi trường
-
-File `docker-compose.yml` tự động thiết lập:
-
-| Biến | Giá trị |
-|------|--------|
-| `POSTGRES_DB` | hadong_traffic |
-| `POSTGRES_USER` | trung |
-| `POSTGRES_PASSWORD` | 123456 |
-| `POSTGRES_HOST` | db (từ Docker network) |
-| `POSTGRES_PORT` | 5432 |
-| `DB_URI` | postgresql://trung:123456@db:5432/hadong_traffic |
-
----
-
-## 🔄 Luồng ETL Pipeline
-
-### Bước 1: Trích xuất từ OpenStreetMap (`osm_data.py`)
-- Sử dụng **OSMnx** để tải dữ liệu đường xá từ OpenStreetMap
-- Giới hạn khu vực: Quận Hà Đông, Hà Nội
-- Output: GeoJSON chứa tất cả edges & nodes
-
-### Bước 2: Làm sạch Dữ liệu (`clean_data.py`)
-- Xóa các cạnh trùng lặp, không hợp lệ
-- Chuẩn hóa cột dữ liệu (tên đường, tốc độ max, v.v.)
-- Output: GeoJSON sạch
-
-### Bước 3: Chuẩn hóa (`normalize.py`)
-- Kiểm tra & chuyển đổi hệ tọa độ (EPSG:4326)
-- Làm phẳng cấu trúc nested JSON
-- Output: GeoJSON chuẩn hóa
-
-### Bước 4: Nạp vào Database (`data_loading.py`)
-- Tạo schema PostgreSQL với PostGIS extension
-- Nạp dữ liệu vào bảng `road_segment`
-- Tạo bảng `vehicle` (phương tiện giả lập)
-- Tạo bảng `gps_tracking` (để chứa dữ liệu GPS streaming)
-
----
-
-## 📊 Streaming GPS (gps_simulator.py)
-
-- Chạy **liên tục** ngầm trong container
-- Giả lập vị trí GPS của các phương tiện trên đường
-- Ghi nhận vào bảng `gps_tracking` với timestamp
-- Dashboard sử dụng dữ liệu này để vẽ Heatmap
-
----
-
-## 🎨 Dashboard (app.py)
-
-**Tính năng:**
-- 🔥 **Heatmap**: Hiển thị điểm tập trung mật độ giao thông
-- 🛣️ **Speed Map**: Hiển thị tốc độ trung bình trên từng đoạn đường
-- 📊 Thống kê: Tổng số phương tiện, tốc độ trung bình, v.v.
-
-**Truy cập:**
-```
-http://localhost:8501
-```
-
----
-
-## 🐛 Troubleshooting
-
-### 1. Port 8501 hoặc 5433 đã bị chiếm dụng
-```bash
-# Thay đổi port trong docker-compose.yml
-# Ví dụ: "8502:8501" thay vì "8501:8501"
-docker compose up --build -d
-```
-
-### 2. PostgreSQL không khởi động
-```bash
-docker compose logs db
-```
-
-### 3. Streamlit không kết nối được Database
-- Kiểm tra `entrypoint.sh` có chạy ETL chưa
-- Kiểm tra Database có bảng `gps_tracking` chưa
-
-### 4. Xóa tất cả và reset
-```bash
-docker compose down -v
-docker system prune -a
-docker compose up --build -d
-```
-
----
-
-## 📝 Ghi chú Phát triển
-
-Để chỉnh sửa code trong quá trình phát triển:
-1. Sửa file trong `src/`
-2. Container sẽ tự động reload (do volume mount)
-3. Hoặc rebuild: `docker compose up --build -d`
-
----
-
-## 📚 Tài liệu Tham khảo
-
-- [Streamlit Documentation](https://docs.streamlit.io/)
-- [GeoPandas Documentation](https://geopandas.org/)
-- [PostGIS Documentation](https://postgis.net/)
-- [OSMnx Documentation](https://osmnx.readthedocs.io/)
-
----
-
-## 📄 License
-
-Dự án thực tập - Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội
-
----
-
-**Ngày cập nhật:** 2024  
-**Liên hệ:** Trần Đức Trung - B23DCCN864
