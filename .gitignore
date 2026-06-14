@@ -1,86 +1,14 @@
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-*.iml
-
-# Environment variables
+*.pyc
 .env
-.env.local
-.env.*.local
+.venv/
 
-# Data files (các file lớn)
-*.csv
-*.geojson
-*.json
-*.shp
-*.shx
-*.dbf
-*.prj
-
-# Cache
-cache/
-.cache/
-*.cache
-
-# Database
-postgres_data/
-*.db
-*.sqlite
-*.sqlite3
-
-# Docker
-.dockerignore
-
-# OS
+# Docker/System
+data/*.geojson
+data/*.csv
 .DS_Store
-Thumbs.db
 
-# Logs
+# Logs & Database 
 *.log
-logs/
-
-# Jupyter
-.ipynb_checkpoints/
-*.ipynb
-
-# Project specific
-data/hadong_roads.geojson
-data/hadong_roads_cleaned.geojson
-data/hadong_roads_normalized.geojson
-data/vehicle.csv
+postgres_data/
