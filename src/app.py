@@ -8,9 +8,9 @@ from sqlalchemy import create_engine
 import os
 
 st.set_page_config(page_title="Hà Đông Traffic", layout="wide")
-st.title(" Dashboard Giám sát giao thông Hà Đông")
+st.title(" Dashboard giám sát giao thông Hà Đông")
 
-DB_URI = os.getenv("DB_URI", "postgresql://trung:123456@localhost:5433/hadong_traffic")
+DB_URI = os.getenv("DB_URI", "postgresql://trung:123456@hadong_db:5432/hadong_traffic")
 engine = create_engine(DB_URI)
 
 try:
@@ -31,7 +31,7 @@ try:
     SELECT COUNT(*) 
     FROM traffic_analytics a
     JOIN road_segment r ON a.road_id = r.road_id
-    WHERE a.congestion_level LIKE '%%Kẹt xe%%'
+    WHERE a.congestion_level = 'Ùn tắc'
       AND r.road_type IN ('primary', 'secondary', 'tertiary', 'trunk', 'motorway')
       AND r.road_name IS NOT NULL;
     """
@@ -49,7 +49,7 @@ try:
         st.metric(label="Số phân đoạn đang ùn tắc (Đỏ)", value=f"{congested_segments} đoạn")
 
 except Exception as kpi_error:
-    st.warning(f"Hệ thống đang tích lũy luồng dữ liệu, các thẻ KPI chỉ số sẽ hiển thị sau ít phút.")
+    st.warning(f"Hệ thống đang tích lũy luồng dữ liệu hoặc có lỗi truy vấn: {kpi_error}")
 
 st.markdown("---")
 
@@ -77,7 +77,7 @@ if layer_choice == " Bản đồ mật độ (Heatmap)":
 
         heat_data = df_gps[['lat', 'lon']].values.tolist()
         
-        HeatMap(heat_data, radius=17, blur=12, max_zoom=1).add_to(m) 
+        HeatMap(heat_data, radius=25, blur=15, max_zoom=1).add_to(m) 
         
     except Exception as e:
         st.error(f"Lỗi truy xuất dữ liệu: {e}")
@@ -100,10 +100,10 @@ elif layer_choice == " Bản đồ tốc độ (Line Map)":
 
         def style_fn(feature):
             level = feature['properties']['congestion_level']
-            color = 'green'
-            if level == 'Kẹt xe (Heavy)': 
+            color = 'green' 
+            if level == 'Ùn tắc': 
                 color = 'red'
-            elif level == 'Mật độ cao (Medium)': 
+            elif level == 'Bình thường': 
                 color = 'orange'
             
             return {
@@ -117,12 +117,11 @@ elif layer_choice == " Bản đồ tốc độ (Line Map)":
             style_function=style_fn,
             tooltip=folium.GeoJsonTooltip(
                 fields=['road_name', 'avg_speed', 'congestion_level'],
-                aliases=['Đường:', 'Tốc độ:', 'Trạng thái:'],
+                aliases=['Đường:', 'Tốc độ (km/h):', 'Trạng thái:'],
                 localize=True
             )
         ).add_to(m)
 
     except Exception as e:
         st.error(f"Lỗi truy xuất dữ liệu không gian đường xá: {e}")
-
-st_folium(m, width=1200, height=600)
+st_folium(m, width=1200, height=600,returned_objects=[])
